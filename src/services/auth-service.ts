@@ -20,13 +20,15 @@ export const authService = {
   register: async (
     username: string,
     email: string,
-    password: string
+    password: string,
+    role :"ADMIN"| "USER"
   ): Promise<LoginResponse> => {
     const res = await api.post<LoginResponse>("/auth/register", {
       username,
       email,
       password,
-      role: "USER",
+      
+      role: role|| "VIEWER",
     });
     return res.data;
   },

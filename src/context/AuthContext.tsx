@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
-    
+
     if (storedUser && token) {
       setUser(JSON.parse(storedUser));
     }
@@ -41,11 +41,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, pass: string) => {
     const data = await authService.login(email, pass);
     console.log(data);
-    const user :User= {
-        id : data.id,
-        username :data.username,
-        email:data.email,
-        role:data.role
+    const user: User = {
+      id: data.id,
+      username: data.username,
+      email: data.email,
+      role: data.role
     }
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(user));
@@ -54,10 +54,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // 3. Register Action
-  const register = async (name: string, email: string, pass: string) => {
-    await authService.register(name, email, pass);
+  const register = async (name: string, email: string, pass: string, role: "ADMIN" | "USER") => {
+    await authService.register(name, email, pass, role);
     // After register, automatically login or redirect to login
-    await login(email, pass); 
+    await login(email, pass);
   };
 
   // 4. Logout Action
