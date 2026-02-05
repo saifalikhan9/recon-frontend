@@ -1,14 +1,19 @@
 "use client";
 
-import ResultsTable from "@/components/dashboard/table-chart/table";
+import AuditDrawer from "@/components/dashboard/AuditLogs";
+import ResultsTable, { ReconResult } from "@/components/dashboard/table-chart/table";
+import EditStatusModal from "@/components/reconciliatioin/Edit";
+
 import { useReconResults } from "@/hooks/useReconResult";
 import { cn } from "@/lib/utils";
 import { Search, Filter, ChevronLeft, ChevronRight, RefreshCcw } from "lucide-react";
+import { useState } from "react";
 
 export default function ResultsPage() {
   // 1. Get everything we need from the Hook
   const { data, loading, totalPages, filters, setFilters, refresh } = useReconResults();
-
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const [editingRecord, setEditingRecord] = useState<ReconResult | null>(null);
   // Helper to change page safely
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -18,7 +23,7 @@ export default function ResultsPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 p-6 text-slate-200 font-sans selection:bg-indigo-500/30">
-      
+
       {/* HEADER */}
       <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -27,8 +32,8 @@ export default function ResultsPage() {
           </h1>
           <p className="text-slate-400 text-sm">Real-time comparison between Uploaded CSV and System Records.</p>
         </div>
-        <button 
-          onClick={refresh} 
+        <button
+          onClick={refresh}
           className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg hover:bg-slate-800 transition-colors text-sm"
         >
           <RefreshCcw size={16} className={loading ? "animate-spin" : ""} /> Refresh
@@ -37,13 +42,13 @@ export default function ResultsPage() {
 
       {/* FILTERS BAR */}
       <div className="mb-6 p-4 rounded-xl border border-white/5 bg-white/5 backdrop-blur-xl shadow-lg flex flex-col md:flex-row gap-4 items-center justify-between">
-        
+
         {/* Search Input */}
         <div className="relative w-full md:w-96 group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
-          <input 
-            type="text" 
-            placeholder="Search Transaction ID..." 
+          <input
+            type="text"
+            placeholder="Search Transaction ID..."
             value={filters.search}
             onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
             className="w-full bg-slate-900/50 border border-slate-800 rounded-lg py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-slate-600"
@@ -53,7 +58,7 @@ export default function ResultsPage() {
         {/* Status Dropdown */}
         <div className="relative w-full md:w-48">
           <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-          <select 
+          <select
             value={filters.status}
             onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }))}
             className="w-full appearance-none bg-slate-900/50 border border-slate-800 rounded-lg py-2.5 pl-10 pr-8 text-sm focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all cursor-pointer"
@@ -69,24 +74,44 @@ export default function ResultsPage() {
 
       {/* DATA TABLE */}
       <div className="flex flex-col gap-4">
-        <ResultsTable data={data} loading={loading} />
+        <ResultsTable data={data} loading={loading} onViewAudit={(id) => setSelectedRecordId(id)} onEdit={(record) => setEditingRecord(record)} />
+        {/* --- NEW COMPONENT: AUDIT DRAWER --- */}
+        {!!selectedRecordId && <AuditDrawer
+          isOpen={!!selectedRecordId}
+          onClose={() => setSelectedRecordId(null)}
+          recordId={selectedRecordId}
+        />}
+
+        {editingRecord && (
+          <EditStatusModal
+            isOpen={!!editingRecord}
+            onClose={() => setEditingRecord(null)}
+            recordId={editingRecord.id}
+            currentStatus={editingRecord.status}
+            onSuccess={() => {
+              refresh(); // Reload table data to show new status
+              // Optional: If you want to see the log immediately, you could open the audit drawer
+              // setAuditRecordId(editingRecord.id); 
+            }}
+          />
+        )}
 
         {/* --- PAGINATION CONTROLS (Implemented Here) --- */}
         <div className="flex items-center justify-between px-6 py-4 border border-white/5 bg-slate-900/30 rounded-xl backdrop-blur-md">
           <span className="text-xs text-slate-500">
             Page <span className="text-white font-medium">{filters.page}</span> of <span className="text-white font-medium">{totalPages}</span>
           </span>
-          
+
           <div className="flex gap-2">
-            <button 
+            <button
               onClick={() => handlePageChange(filters.page - 1)}
               disabled={filters.page === 1 || loading}
               className="p-2 rounded-lg border border-slate-800 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-slate-400 transition-colors"
             >
               <ChevronLeft size={16} />
             </button>
-            
-            <button 
+
+            <button
               onClick={() => handlePageChange(filters.page + 1)}
               disabled={filters.page === totalPages || loading}
               className="p-2 rounded-lg border border-slate-800 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-slate-400 transition-colors"

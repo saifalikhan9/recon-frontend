@@ -1,4 +1,4 @@
-import { FileText, Eye } from "lucide-react";
+import { FileText, Eye, Edit2 } from "lucide-react";
 import clsx from "clsx";
 import { Skeleton } from "@/app/(dashboard)/results/page";
 import { cn } from "@/lib/utils";
@@ -17,9 +17,13 @@ export interface ReconResult {
   } | null;
 }
 
+
+
 interface ResultsTableProps {
   data: ReconResult[];
   loading: boolean;
+  onViewAudit?: (id: string) => void;
+  onEdit?: (record: ReconResult) => void; // <--- NEW PROP
 }
 
 // --- HELPER: STATUS BADGE ---
@@ -38,7 +42,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-export default function ResultsTable({ data, loading }: ResultsTableProps) {
+export default function ResultsTable({ data, loading, onViewAudit, onEdit }: ResultsTableProps) {
   return (
     <div className="rounded-xl border border-white/5 bg-white/5 backdrop-blur-xl shadow-xl overflow-hidden">
       <div className="overflow-x-auto">
@@ -51,12 +55,13 @@ export default function ResultsTable({ data, loading }: ResultsTableProps) {
               <th className="px-6 py-4 text-right bg-emerald-500/5">System Amt</th>
               <th className="px-6 py-4 text-right">Variance</th>
               <th className="px-6 py-4 text-center">Status</th>
+              <th className="px-6 py-4 text-center">Action</th>
             </tr>
           </thead>
 
           {/* BODY */}
           <tbody className="divide-y divide-white/5">
-            
+
             {/* SCENARIO 1: LOADING */}
             {loading && (
               Array.from({ length: 5 }).map((_, i) => (
@@ -83,9 +88,10 @@ export default function ResultsTable({ data, loading }: ResultsTableProps) {
             {/* SCENARIO 3: DATA EXISTS */}
             {!loading && data.map((row) => (
               <tr key={row.id} className="hover:bg-white/5 transition-colors group">
-                
+
                 {/* ID Column */}
                 <td className="px-6 py-4">
+
                   <div className="font-medium text-white group-hover:text-indigo-400 transition-colors">
                     {row.uploadedTxId}
                   </div>
@@ -111,15 +117,32 @@ export default function ResultsTable({ data, loading }: ResultsTableProps) {
                 {/* Variance */}
                 <td className={cn(
                   "px-6 py-4 text-right font-mono font-bold",
-                  row.variance === 0 ? "text-slate-600" : 
-                  Math.abs(row.variance) > 0 ? "text-rose-400" : "text-emerald-400"
+                  row.variance === 0 ? "text-slate-600" :
+                    Math.abs(row.variance) > 0 ? "text-rose-400" : "text-emerald-400"
                 )}>
-                   {row.variance === 0 ? "---" : `${row.variance > 0 ? "+" : ""}${row.variance.toFixed(2)}`}
+                  {row.variance === 0 ? "---" : `${row.variance > 0 ? "+" : ""}${row.variance.toFixed(2)}`}
                 </td>
 
                 {/* Status Badge */}
                 <td className="px-6 py-4 text-center">
                   <StatusBadge status={row.status} />
+                </td>
+
+                <td className="px-6 py-4 text-center">
+                  <button
+                    onClick={() => onViewAudit?.(row.id)}
+                    className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-all group-hover:text-indigo-400"
+                    title="View Audit Log"
+                  >
+                    <Eye size={18} />
+                  </button>
+                  <button
+                    onClick={() => onEdit?.(row)} // Pass the whole row object
+                    className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-all group-hover:text-emerald-400"
+                    title="Override Status"
+                  >
+                    <Edit2 size={18} />
+                  </button>
                 </td>
               </tr>
             ))}
